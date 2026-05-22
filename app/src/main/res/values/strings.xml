@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Tareas App</string>
+    <string name="app_title">Mis tareas</string>
+    <string name="new_task_placeholder">Nueva tarea</string>
+    <string name="add_button">Agregar</string>
+    <string name="empty_list_message">No hay tareas. Agrega una abajo.</string>
+    <string name="completed_checkbox_desc">Marcar como completada</string>
+    <string name="delete_action_desc">Eliminar tarea</string>
+    <string name="search_placeholder">Buscar por título</string>
+    <string name="search_button_desc">Buscar</string>
 </resources>
