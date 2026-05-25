@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 
 class TaskViewModel(
     private val dao: TaskDao
@@ -31,17 +32,27 @@ class TaskViewModel(
     // Texto con el que se esta filtrando efectivamente.
     // Solo cambia cuando el usuario pulsa el boton de buscar.
     private val _activeQuery = MutableStateFlow("")
+    private val _sortOrder = MutableStateFlow(SortOrder.NEWEST)
+    val sortOrder: StateFlow<SortOrder> = _sortOrder.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val tasks: StateFlow<List<TaskEntity>> = _activeQuery
-        .flatMapLatest { query ->
-            dao.searchTasks(query)
+    val tasks: StateFlow<List<TaskEntity>> = combine(
+        _activeQuery,
+        _sortOrder
+    ) { query, sortOrder ->
+        query to sortOrder
+    }.flatMapLatest { (query, sortOrder) ->
+        when (sortOrder) {
+            SortOrder.NEWEST -> dao.searchTasksNewest(query)
+            SortOrder.OLDEST -> dao.searchTasksOldest(query)
+            SortOrder.TITLE_ASC -> dao.searchTasksTitleAsc(query)
+            SortOrder.TITLE_DESC -> dao.searchTasksTitleDesc(query)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
     fun addTask(title: String) {
     // Evitamos insertar tareas con titulo vacio.
         if (title.isBlank()) return
@@ -71,6 +82,11 @@ class TaskViewModel(
     // observa el Flow de tasks.
         _activeQuery.value = _searchInput.value.trim()
     }
+
+    fun onSortOrderChanged(order: SortOrder) {
+        _sortOrder.value = order
+    }
+
     // ----- Factory -----
     // El companion object guarda una Factory que sabe
     // como construir TaskViewModel con sus parámetros.
